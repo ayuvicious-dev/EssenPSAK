@@ -59,7 +59,8 @@ nav{position:fixed;left:max(14px,calc(50% - 252px));right:max(14px,calc(50% - 25
 .ib.aa{font-weight:700;font-size:14px}
 .fsv{position:fixed;inset:0;z-index:15;background:var(--bg);overflow:auto;display:none;-webkit-overflow-scrolling:touch}.fsv.on{display:block}
 .fst{position:fixed;top:0;left:0;right:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--l);transition:transform .2s}.fsv.nobar .fst{transform:translateY(-100%)}.fsn{font-size:14px}
-.fss{padding:72px 0 80px}.fsc.rd{max-width:720px;margin:0 auto;padding:0 22px}
+.mi{flex:1;min-width:0;text-align:left;padding:4px 0}.ib.dnf{background:#E3F7EE;color:var(--ok)}
+.fss{min-height:100vh;min-height:100dvh;box-sizing:border-box;padding:72px 0 80px;display:flex;align-items:center;justify-content:center}.fsc.rd{width:100%;max-width:720px;margin:0 auto;padding:0 22px}
 
 .fsp{position:fixed;left:0;right:0;bottom:0;height:3px;background:var(--s);z-index:2}.fsp i{display:block;height:100%;background:var(--p)}
 @media(max-width:480px){.rdt .m{display:none}}
@@ -81,6 +82,7 @@ nav{position:fixed;left:max(14px,calc(50% - 252px));right:max(14px,calc(50% - 25
 <div id="app"><div class="top"><img data-logo alt=""><b id="tt">Dashboard</b></div><main id="v"></main>
 <nav id="nv"><div class="brand"><img data-logo alt=""><b>EssenPSAK</b></div></nav></div>
 <div class="md" id="md"><div class="sh" id="sh"></div></div>
+<input type="file" id="fi" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onchange="impGo(this.files[0])">
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -197,7 +199,7 @@ return`<div class="g g4"><div class="card stat"><b>${dn()}/${P.length}</b><span>
 <div class="g g2" style="margin-top:12px"><div class="card"><h3>Progres belajar</h3><div class="row"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="${R}" fill="none" stroke="var(--s)" stroke-width="10"/><circle cx="48" cy="48" r="${R}" fill="none" stroke="var(--p)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*p/100} ${C}" transform="rotate(-90 48 48)"/><text x="48" y="53" text-anchor="middle" font-size="17" font-weight="700" fill="var(--t)">${p}%</text></svg><div class="m" style="flex:1">Selesaikan semua materi PSAK dan uji pemahamanmu lewat Latihan.</div></div></div>
 <div class="card"><h3>Skor 7 latihan terakhir (%)</h3><svg viewBox="0 0 280 100" width="100%"><line x1="6" y1="90" x2="274" y2="90" stroke="var(--l)"/>${bars}</svg></div></div>
 <div class="card" style="margin-top:12px"><h3>Catatan terbaru</h3>${S.notes.slice(0,4).map(n=>`<div class="it"><div><b>${E(n.t)}</b><div class="m">${E(n.b).slice(0,70)}</div></div><span class="tag">${E(n.p)}</span></div>`).join("")||'<p class="m">Belum ada catatan. Tekan Tambah untuk mulai.</p>'}</div>`}
-window.ml=q=>{q=(q||"").toLowerCase();let h="",g="";P.filter(x=>(x[1]+" "+x[2]).toLowerCase().includes(q)).forEach(x=>{if(x[3]!=g){g=x[3];h+=`<div class="m" style="padding:14px 0 4px;font-weight:600">${g}</div>`}h+=`<button class="it" onclick="det('${x[0]}')"><div>${x[2]?`<b>${x[1]}</b> · ${E(x[2])}`:x[1]}</div><span class="tag${S.done[x[0]]?" ok":""}">${S.done[x[0]]?"Selesai":"Belum"}</span></button>`});return h||'<p class="m">Tidak ditemukan.</p>'};
+window.ml=q=>{q=(q||"").toLowerCase();let h="",g="";P.filter(x=>(x[1]+" "+x[2]).toLowerCase().includes(q)).forEach(x=>{if(x[3]!=g){g=x[3];h+=`<div class="m" style="padding:14px 0 4px;font-weight:600">${g}</div>`}h+=`<div class="it"><button class="mi" onclick="fsFrom('${x[0]}')">${x[2]?`<b>${x[1]}</b> · ${E(x[2])}`:x[1]}</button><button class="ib${S.done[x[0]]?" dnf":""}" onclick="impTap('${x[0]}')" aria-label="Impor materi: ${E(x[1])}">${SV('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>')}</button></div>`});return h||'<p class="m">Tidak ditemukan.</p>'};
 function mat(){return`<input type="search" placeholder="Cari PSAK, ISAK, atau judul" oninput="document.getElementById('ml').innerHTML=ml(this.value)" style="margin-bottom:12px"><div class="card" id="ml">${ml()}</div>`}
 /* ===== Impor materi: pembaca .docx (template Gen Z) ===== */
 async function unzip(buf){
@@ -271,22 +273,31 @@ async function loadMT(){MT=localMT();try{const s=await getDocs(path("materi")),g
 async function saveMT(pid,M){const loc=saveLocal();if(demo||!U)return{loc,cloud:false,demo:true};
  try{const old=await getDocs(path("materi"));await Promise.all(old.docs.filter(d=>d.id.startsWith(pid+"__")).map(d=>deleteDoc(d.ref)));
   const ch=[];let c=[],n=0;for(const p of M.pages){const j=JSON.stringify(p);if(n+j.length>600000&&c.length){ch.push(c);c=[];n=0}c.push(j);n+=j.length}if(c.length)ch.push(c);
-  await setDoc(doc(db,"users",U.uid,"materi",pid+"__m"),{pid,json:JSON.stringify({src:M.src,title:M.title,ts:M.ts,babs:M.babs,imgs:M.imgs})});
+  await setDoc(doc(db,"users",U.uid,"materi",pid+"__m"),{pid,json:JSON.stringify({src:M.src,srcs:M.srcs,title:M.title,ts:M.ts,babs:M.babs,imgs:M.imgs})});
   await Promise.all(ch.map((c,i)=>setDoc(doc(db,"users",U.uid,"materi",pid+"__"+i),{pid,json:"["+c.join(",")+"]"})));
   return{loc,cloud:true}}catch(e){return{loc,cloud:false}}}
 const msg=(t,b)=>`<h2>${t}</h2><p class="m" style="margin:6px 0 14px">${b}</p><button class="btn" style="margin:0" onclick="close_()">Tutup</button>`;
+const mNk=t=>String(t||"").trim().replace(/\s+/g," ").toUpperCase(),mNs=s=>String(s||"").split(".").map(x=>parseInt(x)||0),mCmp=(a,b)=>{const x=mNs(a),y=mNs(b);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d}return 0},mBn=b=>(String(b.no||"").match(/\d+(?:\.\d+)*/)||[""])[0];
+function mergeMT(O,N){const babs=[],bmap=new Map(),pg=new Map();let add=0,upd=0,u=0;
+ const addB=b=>{const k=mNk(b.no)||("#"+mNk(b.t));let i=bmap.get(k);if(i==null){i=babs.length;babs.push({no:b.no,t:b.t,peta:b.peta||[]});bmap.set(k,i)}else{const o=babs[i];if(b.t)o.t=b.t;if(b.peta&&b.peta.length)o.peta=b.peta}return i};
+ const take=(M,isNew)=>{const bm=M.babs.map(addB);M.pages.forEach(p=>{const key=mNk(p.no)||("#"+(u++));if(isNew){if(pg.has(key))upd++;else add++}pg.set(key,{...p,b:bm[p.b]})})};
+ take(O,false);take(N,true);
+ const ord=babs.map((_,i)=>i).sort((i,j)=>{const a=mBn(babs[i]),b=mBn(babs[j]);return a&&b?(mCmp(a,b)||i-j):i-j}),rk=[];ord.forEach((o,r)=>rk[o]=r);
+ const nb=ord.map(i=>babs[i]),pages=[...pg.values()].map((p,i)=>({p:{...p,b:rk[p.b]},i})).sort((x,y)=>(x.p.b-y.p.b)||mCmp(x.p.no,y.p.no)||(x.i-y.i)).map(x=>x.p);
+ const srcs=[...(O.srcs&&O.srcs.length?O.srcs:[O.src]).filter(x=>x&&x!=N.src),N.src],imgs=pages.reduce((a,p)=>a+p.k.filter(k=>k.k=="img").length,0);
+ return{M:{src:N.src,srcs,title:O.title||N.title,ts:Date.now(),babs:nb,pages,imgs},add,upd}}
 window.imp=()=>{const f=$("#fi");if(f){f.value="";f.click()}};
 window.impGo=async f=>{if(!f||!cur)return;const id=cur;
  if(!/\.docx$/i.test(f.name)){sheet(msg("Format belum didukung","Pilih file Word (.docx) yang disusun dengan template Gen Z."));return}
  sheet(`<h2>Mengimpor materi…</h2><p class="m">${E(f.name)}</p><div class="bar" style="margin-top:14px"><i style="width:55%"></i></div>`);
- try{const M=await parseDocx(f);MT[id]=M;RP[id]=0;savePos();const r=await saveMT(id,M);
+ const prev=MT[id],prevPos=RP[id];try{const N=await parseDocx(f);let M=N,add=N.pages.length,upd=0;if(prev&&prev.pages){const cn=(prev.pages[Math.min(prevPos||0,prev.pages.length-1)]||{}).no;({M,add,upd}=mergeMT(prev,N));const ix=M.pages.findIndex(p=>p.no==cn);RP[id]=ix>=0?ix:0}else RP[id]=0;MT[id]=M;savePos();const r=await saveMT(id,M);
   const note=r.demo?"Mode demo: materi hanya tersimpan di perangkat ini.":r.cloud?"Materi tersimpan di akunmu.":r.loc?"Materi tersimpan di perangkat ini, tetapi belum bisa disinkronkan ke akun (periksa aturan Firestore untuk koleksi “materi”).":"Materi belum bisa disimpan. Ruang penyimpanan perangkat mungkin penuh.";
-  sheet(`<h2>Materi berhasil diimpor</h2><p style="margin:6px 0 4px">${M.pages.length} halaman dari ${M.babs.length} bab${M.imgs?`, ${M.imgs} gambar`:""}.</p><p class="m">Satu paragraf bernomor = satu halaman (${E(M.pages[0].no)}, ${E((M.pages[1]||M.pages[0]).no)}, dst.).</p><p class="m" style="margin:10px 0 14px">${note}</p><button class="btn" style="margin:0" onclick="close_();det('${id}',1)">Mulai baca</button>`)
- }catch(e){delete MT[id];sheet(msg("Gagal mengimpor",E(e&&e.message||"File tidak bisa dibaca.")))}};
+  sheet(`<h2>${prev?"Materi berhasil ditambahkan":"Materi berhasil diimpor"}</h2><p style="margin:6px 0 4px">${prev?`${add} halaman baru, ${upd} diperbarui. Total `:""}${M.pages.length} halaman dari ${M.babs.length} bab${M.imgs?`, ${M.imgs} gambar`:""}.</p><p class="m">Satu paragraf bernomor = satu halaman (${E(M.pages[0].no)}, ${E((M.pages[1]||M.pages[0]).no)}, dst.).</p><p class="m" style="margin:10px 0 14px">${note}</p><button class="btn" style="margin:0" onclick="close_();fsFrom('${id}')">Mulai baca</button>`)
+ }catch(e){if(prev){MT[id]=prev;RP[id]=prevPos}else delete MT[id];sheet(msg("Gagal mengimpor",E(e&&e.message||"File tidak bisa dibaca.")))}};
 window.delMT=async id=>{if(!confirm("Hapus materi hasil impor dari halaman ini?"))return;delete MT[id];delete RP[id];savePos();saveLocal();close_();
- if(!demo&&U)try{const old=await getDocs(path("materi"));await Promise.all(old.docs.filter(d=>d.id.startsWith(id+"__")).map(d=>deleteDoc(d.ref)))}catch(e){}det(id,1)};
+ if(!demo&&U)try{const old=await getDocs(path("materi"));await Promise.all(old.docs.filter(d=>d.id.startsWith(id+"__")).map(d=>deleteDoc(d.ref)))}catch(e){}go("m")};
 window.pn_=(id,d)=>{const M=MT[id];if(!M)return;const n=M.pages.length,i=Math.min(Math.max(0,(RP[id]||0)+d),n-1);if(i==(RP[id]||0))return;RP[id]=i;savePos();det(id,1)};
-window.pj=(id,i)=>{close_();RP[id]=i;savePos();det(id,1)};
+window.pj=(id,i)=>{close_();RP[id]=i;savePos();cur=id;if(fsOn)fsRender();else fsOpen()};
 window.toc=id=>{const M=MT[id];if(!M)return;const c=RP[id]||0;let h=`<h2>Daftar isi</h2>`;
  M.babs.forEach((b,bi)=>{h+=`<div class="tb"><b>${E(b.no)}</b> <span class="m">${E(bs(b.t))}</span></div>`;
   if(b.peta&&b.peta.length)h+=`<details><summary class="m" style="cursor:pointer;margin:6px 0">Peta materi</summary><ul class="pt">${b.peta.map(x=>`<li style="margin-left:${x.l*14}px">${E(x.t)}</li>`).join("")}</ul></details>`;
@@ -300,16 +311,30 @@ const tbl=k=>`<div class="tw"><table class="tt">${k.rows.map(r=>"<tr>"+r.map(c=>
 {const Z=[16,18,20,22];let z=+localStorage.getItem("essenpsak-fs");if(!Z.includes(z))z=18;const ap=()=>document.documentElement.style.setProperty("--fs",z+"px");ap();window.fs=()=>{z=Z[(Z.indexOf(z)+1)%Z.length];ap();try{localStorage.setItem("essenpsak-fs",z)}catch(e){}}}
 let fsOn=false;const nv_=d=>fsOn?fsNav(d):pn_(cur,d);
 function fsEl(){let e=$("#fsv");if(!e){e=document.createElement("div");e.id="fsv";e.className="fsv";
- e.innerHTML=`<div class="fst"><button class="ib" onclick="fsClose()" aria-label="Tutup layar penuh">${SV('<path d="M6 6l12 12M18 6 6 18"/>')}</button><div class="fsn m" id="fsn"></div><button class="ib aa" onclick="fs()" aria-label="Ukuran huruf">Aa</button></div><div class="fss" id="fss"></div><div class="fsp"><i id="fsb"></i></div>`;
+ e.innerHTML=`<div class="fst"><button class="ib aa" onclick="fs()" aria-label="Ukuran huruf">Aa</button><div class="fsn m" id="fsn"></div><div style="display:flex;gap:8px"><button class="ib" id="fsd" onclick="fsTog()" aria-label="Tandai selesai dipelajari">${SV('<path d="m5 12.5 4.5 4.5L19 7.5"/>')}</button><button class="ib" onclick="fsClose()" aria-label="Tutup layar penuh">${SV('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div></div><div class="fss" id="fss"></div><div class="fsp"><i id="fsb"></i></div>`;
  document.body.appendChild(e);
  e.addEventListener("click",ev=>{if(ev.target.closest(".fst,button,a,.rf,.inf"))return;if(String(getSelection()).length)return;const w=innerWidth,x=ev.clientX;if(x<w*.3)fsNav(-1);else if(x>w*.7)fsNav(1);else e.classList.toggle("nobar")})}return e}
 function fsRender(){const M=MT[cur];if(!M)return;const id=cur,n=M.pages.length,i=Math.min(Math.max(0,RP[id]||0),n-1),t=document.createElement("div");t.innerHTML=rd(id,M);const r=t.querySelector(".rd");r.querySelector(".rdf").remove();
- $("#fss").innerHTML=`<div class="rd fsc">${r.innerHTML}</div>`;$("#fsn").innerHTML=`<b>${E(M.pages[i].no)}</b> · ${i+1} / ${n}`;$("#fsb").style.width=(i+1)/n*100+"%";$("#fsv").scrollTop=0}
+ $("#fss").innerHTML=`<div class="rd fsc">${r.innerHTML}</div>`;$("#fsn").innerHTML=`<b>${E(M.pages[i].no)}</b> · ${i+1} / ${n}`;$("#fsb").style.width=(i+1)/n*100+"%";$("#fsd").classList.toggle("dnf",!!S.done[id]);$("#fsv").scrollTop=0}
 function fsNav(d){const M=MT[cur];if(!M)return;const n=M.pages.length,o=RP[cur]||0,i=Math.min(Math.max(0,o+d),n-1);if(i==o)return;RP[cur]=i;savePos();fsRender()}
-window.fsOpen=()=>{if(!cur||!MT[cur])return;fsEl().classList.add("on");$("#fsv").classList.remove("nobar");fsOn=true;document.body.style.overflow="hidden";fsRender();try{const r=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();r&&r.catch&&r.catch(()=>{})}catch(e){}};
-function fsHide(){fsOn=false;const e=$("#fsv");if(e)e.classList.remove("on");document.body.style.overflow="";if(document.fullscreenElement)try{document.exitFullscreen().catch(()=>{})}catch(e){}}
-window.fsClose=()=>{if(!fsOn)return;fsHide();if(cur)det(cur,1)};
-document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&fsOn)fsClose()});
+window.impFrom=id=>{cur=id;imp()};
+/* Klik 1x = impor, klik 2x = riwayat impor */
+let tapT=0,tapM=null;
+window.impTap=id=>{const n=Date.now();if(tapM&&n-tapT<350){clearTimeout(tapM);tapM=null;tapT=0;hist();return}tapT=n;tapM=setTimeout(()=>{tapM=null;tapT=0;if(id)cur=id;imp()},300)};
+window.hist=()=>{const ids=Object.keys(MT).filter(k=>MT[k]&&MT[k].pages).sort((a,b)=>(MT[b].ts||0)-(MT[a].ts||0));
+ let h=`<h2>Riwayat impor</h2>`;
+ if(!ids.length)h+=`<p class="m" style="margin:8px 0 14px">Belum ada materi yang diimpor.</p>`;
+ else h+=`<p class="m" style="margin:4px 0 8px">Menghapus riwayat juga menghapus seluruh materi hasil impor tersebut.</p>`+ids.map(id=>{const x=P.find(p=>p[0]==id),M=MT[id],d=new Date(M.ts||0).toLocaleString("id-ID",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  return`<div class="it"><div style="min-width:0"><b>${x?E(x[1]):E(id)}</b>${x&&x[2]?` <span class="m">· ${E(x[2])}</span>`:""}<div class="m" style="word-break:break-word">${E((M.srcs&&M.srcs.length?M.srcs:[M.src||""]).join(", "))} · ${M.pages.length} halaman · ${d}</div></div><button class="ib" style="color:#D93636" onclick="delHist('${id}')" aria-label="Hapus materi hasil impor">${SV('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>')}</button></div>`}).join("");
+ h+=`<button class="btn o" onclick="close_()">Tutup</button>`;sheet(h)};
+window.delHist=async id=>{if(!confirm("Hapus materi hasil impor ini? Seluruh halaman yang diimpor akan ikut terhapus."))return;
+ delete MT[id];delete RP[id];savePos();saveLocal();
+ if(!demo&&U)try{const old=await getDocs(path("materi"));await Promise.all(old.docs.filter(d=>d.id.startsWith(id+"__")).map(d=>deleteDoc(d.ref)))}catch(e){}
+ hist();if($("#v .dv"))det(cur,1);else if(pg=="m")$("#v").innerHTML=mat()};
+window.fsFrom=id=>{cur=id;if(MT[id])fsOpen();else sheet(`<h2>Materi belum diisi</h2><p class="m" style="margin:6px 0 14px">Impor file Word (.docx) dengan template Gen Z. Satu paragraf bernomor (1.1, 1.2, …) menjadi satu halaman.</p><button class="btn" style="margin:0" onclick="close_();imp()">Impor materi</button><button class="btn o" onclick="close_()">Tutup</button>`)};
+window.fsOpen=()=>{if(!cur||!MT[cur])return;history.pushState({d:1},"");fsEl().classList.add("on");$("#fsv").classList.remove("nobar");fsOn=true;document.body.style.overflow="hidden";fsRender();};
+function fsHide(){fsOn=false;const e=$("#fsv");if(e)e.classList.remove("on");document.body.style.overflow="";}
+window.fsClose=()=>{if(!fsOn)return;if(history.state&&history.state.d)history.back();else{fsHide();go("m")}};
 window.inf=b=>sheet(`<h2 style="font-size:18px">${E(b.dataset.t)}</h2><p class="bp" style="margin:10px 0 16px">${E(b.dataset.g)}</p><button class="btn" style="margin:0" onclick="close_()">Tutup</button>`);
 window.rf=(id,key)=>{const M=MT[id];if(!M)return;const[a,b]=key.split("~"),ia=M.pages.findIndex(p=>p.no==a);if(ia<0)return;let ib=b?M.pages.findIndex(p=>p.no==b):ia;if(ib<ia)ib=ia;const ps=M.pages.slice(ia,Math.min(ib,ia+11)+1);
  sheet(`<h2 style="margin:0 0 4px">Paragraf ${E(a)}${ps.length>1?"–"+E(ps[ps.length-1].no):""}</h2>`+ps.map(p=>`<div class="rfp">${ps.length>1?`<div class="rfn">${E(p.no)}</div>`:""}${blks(p,id)}</div>`).join("")+`<div class="row" style="gap:8px;margin-top:14px"><button class="btn" style="margin:0" onclick="pj('${id}',${ia})">Buka halaman ${E(a)}</button><button class="btn o" style="margin:0" onclick="close_()">Tutup</button></div>`)};
@@ -325,19 +350,53 @@ const ix=P.indexOf(x),pv=P[ix-1],nx=P[ix+1],nm=p=>p[1]+(p[2]?" · "+p[2]:""),sv=
 $("#v").innerHTML=`<button class="bkb" onclick="bk()">${sv('<path d="m15 18-6-6 6-6"/>')}Materi</button><input type="file" id="fi" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onchange="impGo(this.files[0])">
 <div class="dv"><div class="card dh">${x[1].startsWith(x[3])?"":`<span class="tag">${E(x[3])}</span>`}<h2 style="margin-top:0;${x[2]?"":"font-weight:400"}">${x[1]}</h2>${x[2]?`<p class="dsub">${E(x[2])}</p>`:""}${M?bt(id,M):""}
 </div>
-${M?rd(id,M,dn_):`<div class="card"><h3>Ringkasan materi</h3>${d?`<p>${d[0]}</p><ul class="pt">${d[1].split("|").map(i=>`<li>${i}</li>`).join("")}</ul>`:`<div class="emp">${sv('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>')}<p>Materi ini belum diisi.</p><span class="m">Impor file Word (.docx) dengan template Gen Z. Satu paragraf bernomor (1.1, 1.2, …) menjadi satu halaman.</span><button class="btn" onclick="imp()">Impor materi</button></div>`}</div>`}
+${M?rd(id,M,dn_):`<div class="card"><h3>Ringkasan materi</h3>${d?`<p>${d[0]}</p><ul class="pt">${d[1].split("|").map(i=>`<li>${i}</li>`).join("")}</ul>`:`<div class="emp">${sv('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>')}<p>Materi ini belum diisi.</p><span class="m">Impor file Word (.docx) dengan template Gen Z. Satu paragraf bernomor (1.1, 1.2, …) menjadi satu halaman.</span><button class="btn" onclick="impTap()">Impor materi</button></div>`}</div>`}
 <div class="card"><div class="row" style="margin-bottom:6px"><h3 style="margin:0">Catatan${ns.length?` <span class="tag">${ns.length}</span>`:""}</h3></div>${ns.map(n=>`<div class="it"><div><b>${E(n.t)}</b><div class="m">${E(n.b)}</div></div></div>`).join("")||'<div class="emp"><span class="m">Belum ada catatan untuk materi ini.</span></div>'}</div>
-<div class="acts" style="margin:0"><button class="btn${dn_?" dn":""}" onclick="tog('${id}')">${dn_?sv('<path d="m5 12.5 4.5 4.5L19 7.5"/>')+"Selesai dipelajari":sv('<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>')+"Tandai selesai"}</button><button class="btn o" onclick="addFor('${x[1]}')">${sv('<path d="M12 5v14M5 12h14"/>')}Catatan</button><button class="btn o" onclick="imp()">${sv('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>')}${M?"Ganti materi":"Impor materi"}</button></div>
+<div class="acts" style="margin:0"><button class="btn${dn_?" dn":""}" onclick="tog('${id}')">${dn_?sv('<path d="m5 12.5 4.5 4.5L19 7.5"/>')+"Selesai dipelajari":sv('<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>')+"Tandai selesai"}</button><button class="btn o" onclick="addFor('${x[1]}')">${sv('<path d="M12 5v14M5 12h14"/>')}Catatan</button><button class="btn o" onclick="impTap()">${sv('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>')}${M?"Tambah materi":"Impor materi"}</button></div>
 ${M?"":`<div class="pn">${pv?`<button class="pnb" onclick="det('${pv[0]}')"><span class="m">← Sebelumnya</span><span>${E(nm(pv))}</span></button>`:"<span></span>"}${nx?`<button class="pnb nx" onclick="det('${nx[0]}')"><span class="m">Berikutnya →</span><span>${E(nm(nx))}</span></button>`:""}</div>`}</div>`;scrollTo(0,0)};
 window.bk=()=>{history.state&&history.state.d?history.back():go("m")};
 onpopstate=()=>{if(fsOn)fsHide();if(cur)go("m")};
 window.addFor=c=>{add();$("#np").value=c};
-window.tog=async id=>{if(S.done[id])delete S.done[id];else S.done[id]=1;if(!demo)try{S.done[id]?await setDoc(doc(db,"users",U.uid,"progress",""+id),{ts:Date.now()}):await deleteDoc(doc(db,"users",U.uid,"progress",""+id))}catch(e){}close_();cur?det(cur,1):go(pg)};
-function quiz(){if(!qs)return`<div class="card"><button class="btn" style="margin:0" onclick="qStart()">Mulai latihan</button></div>`;
-if(qs.i>=Q.length)return`<h2>Selesai</h2><div class="card stat"><b>${qs.s}/${Q.length}</b><span>Skor kamu</span><button class="btn" onclick="qStart()">Ulangi</button></div>`;
-const q=Q[qs.i];return`<h2>Soal ${qs.i+1} dari ${Q.length}</h2><div class="bar" style="margin:8px 0 14px"><i style="width:${qs.i/Q.length*100}%"></i></div><div class="card"><b>${q[0]}</b>${q[1].map((o,i)=>`<button class="q" onclick="ans(${i})">${o}</button>`).join("")}</div>`}
-window.qStart=()=>{qs={i:0,s:0};go("q")};
-window.ans=async i=>{if(qs.lock)return;qs.lock=1;const q=Q[qs.i],bs=document.querySelectorAll(".q");bs[q[2]].classList.add("r");if(i!=q[2])bs[i].classList.add("w");else qs.s++;await new Promise(r=>setTimeout(r,900));qs.i++;qs.lock=0;if(qs.i>=Q.length){const l={sc:qs.s,tot:Q.length,ts:Date.now()};if(!demo)try{const r=await addDoc(path("logs"),l);l.id=r.id}catch(e){}S.logs.push(l)}go("q")};
+window.tog=async id=>{if(S.done[id])delete S.done[id];else S.done[id]=1;if(!demo)try{S.done[id]?await setDoc(doc(db,"users",U.uid,"progress",""+id),{ts:Date.now()}):await deleteDoc(doc(db,"users",U.uid,"progress",""+id))}catch(e){}close_();fsOn?fsRender():go(pg)};
+window.fsTog=()=>{if(cur)tog(cur)};
+/* ===== Latihan: soal pilihan ganda otomatis dari materi PSAK ===== */
+let QZ=Q,QG=false,QP={pid:"*",n:10};
+const stp=h=>String(h||"").replace(/<[^>]+>/g,"").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&amp;/g,"&").replace(/\s+/g," ").trim();
+const shf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const mtIds=()=>Object.keys(MT).filter(k=>MT[k]&&MT[k].pages&&MT[k].pages.length&&P.find(p=>p[0]==k));
+const bTerms=ids=>{const m=new Map();ids.forEach(id=>MT[id]&&MT[id].pages&&MT[id].pages.forEach(pg=>pg.k.forEach(k=>{(k.t||"").replace(/<b>([^<]{3,50})<\/b>/g,(_,b)=>{b=stp(b);if(b.length>=3)m.set(b.toLowerCase(),b);return _})})));return[...m.values()]};
+function genQ(pid,n){
+ const ids=pid=="*"?mtIds():mtIds().filter(k=>k==pid),C=[],seen=new Set(),own=bTerms(ids),all=ids.length==mtIds().length?own:bTerms(mtIds());
+ ids.forEach(id=>{const lb=P.find(p=>p[0]==id)[1];MT[id].pages.forEach(pg=>pg.k.forEach(k=>{
+  if(!["p","a","i","b"].includes(k.k)||!k.t)return;
+  k.t.replace(/([.!?])\s+(?=[A-Z0-9(])/g,"$1\n").split("\n").forEach(sn=>{
+   const pl=stp(sn);if(pl.length<45||pl.length>300||seen.has(pl))return;
+   const bs=[...sn.matchAll(/<b>([^<]{3,50})<\/b>/g)].map(m=>stp(m[1])).filter(x=>x.length>=3),src={id,lb,no:pg.no,pl},t=bs.find(x=>pl.split(x).length==2&&pl.length>x.length+30);
+   if(t){seen.add(pl);C.push({ty:"t",a:t,...src});return}
+   const m=pl.match(/(\d+(?:[.,]\d+)?)(\s?(?:%|persen|bulan|tahun|hari|minggu|kali|jam))(?![A-Za-z])/i);
+   if(m&&!/^\d{1,3}\.\d{3}$/.test(m[1])&&pl.split(m[0]).length==2){seen.add(pl);C.push({ty:"n",a:m[0],v:m[1],u:m[2],...src})}
+  })}))});
+ const td=c=>{const al=c.a.toLowerCase(),pl=c.pl.toLowerCase(),ok=t=>{const l=t.toLowerCase();return l!=al&&!al.includes(l)&&!l.includes(al)&&!pl.includes(l)},pick=s=>shf(s.filter(ok)).sort((x,y)=>Math.abs(x.length-c.a.length)-Math.abs(y.length-c.a.length)).slice(0,8),o=[];
+  for(const t of[...shf(pick(own)),...shf(pick(all))]){if(!o.some(z=>z.toLowerCase()==t.toLowerCase()))o.push(t);if(o.length==3)break}return o};
+ const nd=c=>{const v=parseFloat(c.v.replace(",",".")),f=x=>String(+x.toFixed(2)).replace(".",","),s=new Set();[v*2,v/2,v+5,v+10,v-5,v+1,v-1,v*3,v*10].forEach(x=>{if(isFinite(x)&&x>0&&x!=v)s.add(f(x))});return shf([...s]).slice(0,3).map(x=>x+c.u)};
+ const mk=c=>{const d=c.ty=="t"?td(c):nd(c);if(d.length<3)return null;const op=shf([c.a,...d]),ea=E(c.a),es=E(c.pl);
+  return["Lengkapi pernyataan berikut: "+es.replace(ea,()=>"_____"),op.map(E),op.indexOf(c.a),`Jawaban: <b>${ea}</b>. ${es.replace(ea,()=>`<b>${ea}</b>`)}<br>Sumber: ${E(c.lb)}${c.no?" · "+E(c.no):""}`,c.lb]};
+ const out=[];for(const c of shf(C)){const q=mk(c);if(q)out.push(q);if(out.length>=n)break}return out}
+function quiz(){
+if(!qs){const ids=mtIds(),op=ids.map(k=>{const x=P.find(p=>p[0]==k);return`<option value="${E(k)}"${QP.pid==k?" selected":""}>${E(x[1])} · ${E(x[2]).slice(0,48)}</option>`}).join("");
+return`<h2>Latihan</h2><p class="sub">Soal pilihan ganda dibuat otomatis dari materi PSAK yang sudah diimpor, lengkap dengan kunci jawaban.</p><div class="card">${ids.length?`<label for="qp">Materi</label><select id="qp"><option value="*">Semua materi yang sudah diimpor</option>${op}</select><label for="qn">Jumlah soal</label><select id="qn">${[5,10,15,20].map(n=>`<option${QP.n==n?" selected":""}>${n}</option>`).join("")}</select><button class="btn" onclick="qGen()">Buat soal otomatis</button>`:`<p class="m">Belum ada materi yang diimpor. Impor file .docx materi dari halaman Materi dulu, lalu soal bisa dibuat otomatis.</p>`}<button class="btn o" onclick="qBank()">Pakai soal bawaan</button></div>`}
+if(qs.i>=QZ.length){const rv=QG?`<h3 style="margin:18px 0 6px">Kunci jawaban</h3>`+QZ.map((q,j)=>`<div class="card" style="margin-top:8px"><div class="m">${j+1}. ${qs.h[j]==q[2]?"✓ Benar":"✗ Salah"} · ${E(q[4]||"")}</div><b>${q[0]}</b><div style="margin-top:6px">Jawaban benar: <b>${q[1][q[2]]}</b></div>${qs.h[j]!=q[2]&&q[1][qs.h[j]]!=null?`<div class="m">Jawabanmu: ${q[1][qs.h[j]]}</div>`:""}<div class="m" style="margin-top:6px">${q[3]||""}</div></div>`).join(""):"";
+return`<h2>Selesai</h2><div class="card stat"><b>${qs.s}/${QZ.length}</b><span>Skor kamu</span><button class="btn" onclick="qStart()">${QG?"Ulangi soal ini":"Ulangi"}</button>${QG?`<button class="btn o" onclick="qGen()">Buat soal baru</button>`:""}<button class="btn o" onclick="qReset()">Kembali</button></div>${rv}`}
+const q=QZ[qs.i];return`<h2>Soal ${qs.i+1} dari ${QZ.length}</h2>${QG?`<p class="sub" style="margin-bottom:0">${E(q[4]||"")}</p>`:""}<div class="bar" style="margin:8px 0 14px"><i style="width:${qs.i/QZ.length*100}%"></i></div><div class="card" id="qc"><b>${q[0]}</b>${q[1].map((o,i)=>`<button class="q" onclick="ans(${i})">${o}</button>`).join("")}</div>`}
+window.qStart=()=>{qs={i:0,s:0,h:[]};go("q")};
+window.qReset=()=>{qs=null;go("q")};
+window.qBank=()=>{QZ=Q;QG=false;qStart()};
+window.qGen=()=>{const pid=($("#qp")||{}).value||QP.pid,n=+(($("#qn")||{}).value||QP.n);QP={pid,n};const l=genQ(pid,n);if(!l.length){sheet(msg("Soal belum bisa dibuat","Isi materi ini belum cukup (butuh kalimat dengan istilah tebal atau angka). Coba pilih PSAK lain atau Semua materi."));return}QZ=l;QG=true;qStart()};
+async function qDone(){const l={sc:qs.s,tot:QZ.length,ts:Date.now()};if(!demo)try{const r=await addDoc(path("logs"),l);l.id=r.id}catch(e){}S.logs.push(l)}
+window.qNext=async()=>{qs.i++;qs.lock=0;if(qs.i>=QZ.length)await qDone();go("q")};
+window.ans=async i=>{if(qs.lock)return;qs.lock=1;const q=QZ[qs.i],bs=document.querySelectorAll(".q");bs[q[2]].classList.add("r");if(i!=q[2])bs[i].classList.add("w");else qs.s++;
+if(QG){qs.h[qs.i]=i;document.querySelector("#qc").insertAdjacentHTML("beforeend",`<div style="margin-top:12px;padding:10px 12px;background:var(--s);border-radius:10px;font-size:14px">${i==q[2]?"✓ Benar. ":"✗ Kurang tepat. "}${q[3]}</div><button class="btn" onclick="qNext()">${qs.i+1>=QZ.length?"Lihat hasil":"Lanjut"}</button>`);return}
+await new Promise(r=>setTimeout(r,900));qs.i++;qs.lock=0;if(qs.i>=QZ.length)await qDone();go("q")};
 function set(){const th=document.documentElement.dataset.theme;return`<h2>Pengaturan</h2><p class="sub">${demo?"Mode demo":E(U?.email||"")}</p><div class="card"><label for="tm">Tampilan</label><select id="tm" onchange="setTh(this.value)"><option value="light"${th=="light"?" selected":""}>Terang</option><option value="dark"${th=="dark"?" selected":""}>Gelap</option></select><button class="btn o" onclick="out()">Keluar</button></div><p class="m" style="text-align:center;margin-top:16px">EssenPSAK v1.0</p>`}
 window.setTh=v=>{document.documentElement.dataset.theme=v;localStorage.setItem("essenpsak-theme",v)};
 function sheet(h){$("#sh").innerHTML=h;$("#md").classList.add("on")}function close_(){$("#md").classList.remove("on")}window.close_=close_;
