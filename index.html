@@ -76,6 +76,7 @@ nav{position:fixed;left:max(14px,calc(50% - 252px));right:max(14px,calc(50% - 25
  .g4{grid-template-columns:repeat(4,1fr)}
  .md{align-items:center}.sh{border-radius:20px}}
 .ogt{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:var(--s);color:var(--pt);padding:3px 11px;border-radius:20px;margin-bottom:14px}
+.ogb{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit}.ogb:hover{background:var(--l)}.ogb svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}.ogb.on svg{transform:rotate(90deg)}
 .ogt span{font-weight:400;text-transform:none;letter-spacing:0;opacity:.8}
 .rd.og .bp,.rd.og .li{font-family:Georgia,'Times New Roman',serif}
 .md:has(.sh.rfs){align-items:center}
@@ -375,15 +376,15 @@ const STOPW=new Set("DAN YANG ATAU DARI DALAM UNTUK PADA DENGAN SERTA TERHADAP O
 const pgNk=t=>String(t||"").replace(/\s+/g," ").trim().toUpperCase();
 const pgIsPaged=body=>{let n=0;for(const p of Array.from(body.childNodes)){if(p.localName!="p")continue;const t=runsOf(p).map(r=>r.t).join("").trim();if(!t)continue;if(/^\[HALAMAN\s+\d+\]/i.test(t))return true;if(++n>6)break}return false};
 function pgLine(p){const rs=runsOf(p),live=rs.filter(r=>r.t.trim()),all=rs.map(r=>r.t).join(""),ind=gw(p,"ind")[0],bl=p.getElementsByTagNameNS(AN,"blip")[0],dp=p.getElementsByTagNameNS(WPN,"docPr")[0];
- return{rs,all,tx:all.replace(/[\s ]+/g," ").trim(),bold:live.length>0&&live.every(r=>r.b),ital:live.length>0&&live.every(r=>r.i),ind:ind?+ind.getAttributeNS(WN,"left")||0:0,li:(wv(p,"pStyle")||"").replace(/\s/g,"")=="ListParagraph",rid:bl?bl.getAttributeNS(RN,"embed"):null,alt:dp?dp.getAttribute("descr")||dp.getAttribute("title")||"":""}}
-const pgStream=()=>({babs:[],pages:[],cb:-1,bn:"",h:[],cp:null,last:null,toc:false,tb:[],lh:null,title:"",seen:new Set(),dups:0,orph:0,un:0,lamp:false,lt:false});
+ return{rs,all,na:all.replace(/（/g,"(").replace(/）/g,")"),kn:!!gw(p,"keepNext")[0],tx:all.replace(/[\s ]+/g," ").trim(),bold:live.length>0&&live.every(r=>r.b),ital:live.length>0&&live.every(r=>r.i),ind:ind?+ind.getAttributeNS(WN,"left")||0:0,li:(wv(p,"pStyle")||"").replace(/\s/g,"")=="ListParagraph",rid:bl?bl.getAttributeNS(RN,"embed"):null,alt:dp?dp.getAttribute("descr")||dp.getAttribute("title")||"":""}}
+const pgStream=()=>({babs:[],pages:[],cb:-1,bn:"",h:[],cp:null,last:null,toc:false,tb:[],lh:null,title:"",seen:new Set(),dups:0,orph:0,un:0,lamp:false,lt:false,ps:false,ln:0,pre:[],sub:""});
 function pgFeed(S,L){
  const nb=()=>{if(S.cb<0){S.babs.push({no:"",t:"",peta:[]});S.cb=0}};
  const endToc=rep=>{if(!S.toc)return;S.toc=false;if(rep)S.babs[S.cb].peta=S.tb.map(x=>({l:x.l,t:x.t}));else S.tb.filter(x=>!x.li).forEach(x=>{S.h=S.h.filter(y=>y.l<x.lvl);S.h.push({l:x.lvl,t:x.t,g:""})});S.tb=[]};
  const tgt=()=>S.cp||S.last,imp=()=>{const e={no:"Hal. "+(++S.un),b:S.cb,h:S.h.map(x=>({...x})),k:[],un:true};S.pages.push(e);S.cp=e;S.last=e;return e};
- if(L.tbl){endToc(false);S.lh=null;nb();let t=tgt();if(!t&&S.lamp)t=imp();if(t)t.k.push({k:"tbl",rows:parseTbl(L.tbl)});return}
+ if(L.tbl){if(S.ps&&S.cb<0)return;endToc(false);S.lh=null;nb();let t=tgt();if(!t&&S.lamp)t=imp();if(t)t.k.push({k:"tbl",rows:parseTbl(L.tbl)});return}
  const tx=L.tx;
- if(L.rid){endToc(false);S.lh=null;nb();let t=tgt();if(!t&&S.lamp)t=imp();if(t)t.k.push({k:"img",alt:L.alt,rid:L.rid});return}
+ if(L.rid){if(S.ps&&S.cb<0)return;endToc(false);S.lh=null;nb();let t=tgt();if(!t&&S.lamp)t=imp();if(t)t.k.push({k:"img",alt:L.alt,rid:L.rid});return}
  if(!tx)return;
  const up=tx===tx.toUpperCase()&&/[A-Z]/.test(tx);
  const ml=(L.bold||up)&&tx.length<60&&tx.match(/^LAMPIRAN(?:\s+([A-Z]|\d{1,2}|[IVX]{1,4})\b)?\s*[:.\-–—]?\s*(.*)$/i);
@@ -396,14 +397,26 @@ function pgFeed(S,L){
  if(mb){const no="BAB "+mb[1].toUpperCase(),old=S.babs[S.cb];
   if(old&&old.no==no){if(!old.t&&mb[2])old.t=mb[2].trim();S.lh={o:old,up:true};return}
   endToc(false);S.lamp=false;S.lt=false;const b={no,t:mb[2].trim(),peta:[]};S.babs.push(b);S.cb=S.babs.length-1;S.bn=/^\d+$/.test(mb[1])?mb[1]:"";S.h=[];S.cp=null;S.toc=true;S.tb=[];S.lh={o:b,up:true};return}
+ if(S.ps&&L.bold&&up&&L.kn&&!/^BAGIAN\s|XYZ/i.test(tx)){
+  if(S.cb<0&&!S.title){S.title=tx;return}
+  if(S.title&&pgNk(S.title)==pgNk(tx))return;
+  if(S.cb<0&&S.title&&!S.sub&&!S.pages.length){S.sub=tx;return}
+  if(S.sub&&pgNk(S.sub)==pgNk(tx))return;
+  const c0=S.babs[S.cb];
+  if(c0&&c0.t&&pgNk(c0.t)==pgNk(tx)){S.lh={o:c0,up:true};return}
+  const l0=S.lh;
+  if(l0&&l0.up&&c0&&l0.o===c0){const w=c0.t.split(" ").pop().replace(/[^A-Za-z]/g,"").toUpperCase();if(STOPW.has(w)){c0.t+=" "+tx;return}}
+  const b={no:"",t:tx,peta:[]};S.babs.push(b);S.cb=S.babs.length-1;S.h=[];S.cp=null;S.last=null;S.lh={o:b,up:true};
+  if(S.pre.length){const k=S.pre.map(r=>({k:"p",t:toHtml(r,0)})).filter(x=>x.t);S.pre=[];if(k.length)S.pages.push({no:"Pengantar",b:S.cb,h:[],k,un:true})}
+  return}
  if(L.bold&&up&&S.cb<0&&!S.title){S.title=tx;return}
  if(S.title&&pgNk(S.title)==pgNk(tx)&&L.bold)return;
  const cap=/^(Tabel|Diagram|Gambar|Bagan|Grafik|Ilustrasi)\s+\d/i.test(tx)||(L.capl&&!up);
- if(L.bold&&!cap){
+ if(L.bold&&!cap&&(!S.ps||(L.kn&&!/XYZ/i.test(tx))||/^BAGIAN\s/i.test(tx))){
   const lh=S.lh;
   if(lh&&lh.up==up){const w=lh.o.t.split(" ").pop().replace(/[^A-Za-z]/g,"").toUpperCase();if(STOPW.has(w)){lh.o.t+=" "+tx;return}}
   if(S.toc&&S.cb>=0&&!S.tb.length&&!S.babs[S.cb].t&&up){S.babs[S.cb].t=tx;S.lh={o:S.babs[S.cb],up:true};return}
-  const lvl=up?2:L.ital?4:3;
+  const lvl=S.ps?2:up?2:L.ital?4:3;
   if(S.toc){
    const f=S.tb[0];
    if(f&&f.lvl==lvl&&(pgNk(f.t)==pgNk(tx)))endToc(true);
@@ -411,39 +424,59 @@ function pgFeed(S,L){
   }
   const top=S.h.find(x=>x.l==lvl);
   if(top&&pgNk(top.t)==pgNk(tx)&&S.h[S.h.length-1]===top)return;
-  const o={l:lvl,t:tx,g:""};S.h=S.h.filter(x=>x.l<lvl);S.h.push(o);S.cp=null;if(S.lamp)S.last=null;S.lh={o,up};return}
+  const o={l:lvl,t:tx,g:""};S.h=S.h.filter(x=>x.l<lvl);S.h.push(o);S.cp=null;if(S.lamp||(S.ps&&S.last&&S.last.un))S.last=null;S.lh={o,up};return}
  if(L.li&&S.toc){S.tb.push({l:1,lvl:3,li:true,t:tx});S.lh=null;return}
+ if(S.ps&&S.cb<0){S.pre.push(L.rs);return}
  endToc(false);S.lh=null;nb();
- const m=L.all.match(/^[\s ]*(\d{1,2}(?:\.\d{1,3})+|\d{1,2},\d{1,3}(?=\.[\s ]))\.*[\s ]*/);
- if(m&&(!S.bn||m[1].split(/[.,]/)[0]==S.bn)&&!cap){const no=m[1].replace(",",".");
+ const m=S.ps?L.na.match(/^[\s ]*(\d{1,3}[A-Z]{0,2})\.(?!\d)[\s ]+/):L.all.match(/^[\s ]*(\d{1,2}(?:\.\d{1,3})+|\d{1,2},\d{1,3}(?=\.[\s ]))\.*[\s ]*/);
+ if(m&&(!S.bn||m[1].split(/[.,]/)[0]==S.bn)&&!cap&&(!S.ps||parseInt(m[1])>=S.ln)){const no=m[1].replace(",",".");if(S.ps)S.ln=parseInt(m[1]);
   if(S.seen.has(no)){S.dups++;S.cp={k:[]};return}
   S.seen.add(no);const e={no,b:S.cb,h:S.h.map(x=>({...x})),k:[{k:"p",t:toHtml(L.rs,m[0].length)}]};S.pages.push(e);S.cp=e;S.last=e;return}
- let t=tgt();if(!t&&S.lamp)t=imp();
+ let t=tgt();if(!t&&(S.lamp||S.ps))t=imp();
  if(!t)return;
  if(!S.cp)S.orph++;
  if(cap){t.k.push({k:"p",t:toHtml(L.rs,0)});return}
- const mi=L.all.match(/^[\s ]*(\([^)\s]{1,6}\)|[A-Za-z0-9]{1,3}[.)]|[•·▪\-–])[\s ]+/),isI=mi&&(/^\(/.test(mi[1])||L.ind>0)&&t===S.cp;
+ const mi=L.na.match(/^[\s ]*(\([^)\s]{1,6}\)|[A-Za-z0-9]{1,3}[.)](?=[\s ])|[•·▪\-–](?=[\s ]))[\s ]*/),isI=mi&&(/^\(/.test(mi[1])||L.ind>0)&&t===S.cp;
  if(isI){const bu=/^[•·▪\-–]$/.test(mi[1]),x=toHtml(L.rs,mi[0].length);if(x)t.k.push({k:bu?"b":L.ind>=1000?"i":"a",n:bu?"":mi[1],t:x});return}
  const x=toHtml(L.rs,0);if(!x)return;
  const lb=t.k[t.k.length-1];
  if(lb&&/^[pabi]$/.test(lb.k)&&lb.t&&!/[.:;!?)”"]\s*(<\/[bi]>)?$/.test(lb.t)&&/^(<[bi]>)?[a-zà-ÿ]/.test(x)){lb.t+=" "+x;return}
  t.k.push({k:"p",t:x})}
 /* Halaman lampiran yang sudah berisi tabel dianggap lengkap: [HALAMAN n] berikutnya memulai halaman baru */
-const pgBrk=S=>{const c=S.cp||S.last;if(S.lamp&&c&&c.un&&c.k.some(k=>k.k=="tbl")){S.cp=null;S.last=null}};
+const pgBrk=S=>{const c=S.cp||S.last;if((S.lamp||S.ps)&&c&&c.un&&c.k.some(k=>k.k=="tbl")){S.cp=null;S.last=null}};
+const ttl=S=>S.title?S.title+(S.sub?" — "+S.sub:""):"";
+/* Cadangan: file [HALAMAN n] tanpa paragraf bernomor yang dikenali → tiap pasangan halaman asli + terjemahan jadi satu halaman materi */
+function pgFallback(ns){
+ const bl=[];let cu=null;
+ for(const x of ns){
+  if(x.n.localName=="p"){const m=x.L.tx.match(/^\[HALAMAN\s+(\d+)\]\s*(.*)$/i);
+   if(m){const n=+m[1],r=m[2]||"",o=/ASLI|ORIGINAL/i.test(r)?true:/TERJEMAH|GEN\s*Z/i.test(r)?false:n%2==1;cu={n,o,k:[]};bl.push(cu);continue}
+   if(/^Halaman\s+\d+\s+ini\s+menerjemahkan/i.test(x.L.tx))continue}
+  if(!cu)continue;
+  if(x.n.localName=="tbl"){cu.k.push({k:"tbl",rows:parseTbl(x.n)});continue}
+  const L=x.L;
+  if(L.rid){cu.k.push({k:"img",alt:L.alt,rid:L.rid});continue}
+  const t=toHtml(L.rs,0);if(t)cu.k.push({k:"p",t})}
+ const pages=[],mk=(n,k,o)=>{const e={no:"Hal. "+n,b:0,h:[],un:true,k};if(o&&o.length)e.o=o;return e};
+ for(let i=0;i<bl.length;i++){const b=bl[i],nx=bl[i+1];
+  if(b.o&&nx&&!nx.o){if(nx.k.length)pages.push(mk(b.n,nx.k,b.k));else if(b.k.length)pages.push(mk(b.n,b.k));i++;continue}
+  if(b.k.length)pages.push(mk(b.n,b.k))}
+ return{babs:[{no:"",t:"",peta:[]}],pages,title:""}}
 async function parsePaged(file,body,rels,z){
  const A={k:pgStream(),o:pgStream()};let side="k";
  const ns=[];for(const n of Array.from(body.childNodes)){if(n.localName=="tbl")ns.push({n,fig:1});else if(n.localName=="p"){const L=pgLine(n);if(L.tx||L.rid)ns.push({n,L,fig:L.rid?1:0})}}
  ns.forEach((x,i)=>{if(x.L&&x.L.bold&&ns[i+1]&&ns[i+1].fig)x.L.capl=true});
+ if(!ns.some(x=>x.L&&x.L.bold&&/^BAB\s+[0-9IVXLC]+/i.test(x.L.tx))&&ns.filter(x=>x.L&&/^\d{2,3}[A-Z]{0,2}\.[\s ]+\S/.test(x.L.na)).length>=5){A.k.ps=true;A.o.ps=true}
  for(const x of ns){
   if(x.n.localName=="tbl"){pgFeed(A[side],{tbl:x.n});continue}
   const L=x.L,m=L.tx.match(/^\[HALAMAN\s+\d+\]\s*(.*)$/i);
   if(m){side=/ASLI|ORIGINAL/i.test(m[1])?"o":"k";pgBrk(A[side]);continue}
   if(/^Halaman\s+\d+\s+ini\s+menerjemahkan/i.test(L.tx))continue;
   pgFeed(A[side],L)}
- const P1=A.k.pages.length?A.k:A.o,P2=P1===A.k?A.o:null;
- if(!P1.pages.length)throw new Error("Tidak ada paragraf bernomor (misalnya 1.1, 1.2) di file ini.");
+ let P1=A.k.pages.length?A.k:A.o,P2=P1===A.k?A.o:null;
+ if(!P1.pages.length){const FB=pgFallback(ns);if(!FB.pages.length)throw new Error("Tidak ada isi yang terbaca di file ini. Pastikan ada penanda [HALAMAN 1], [HALAMAN 2], dst.");FB.title=ttl(A.k)||ttl(A.o)||"";P1=FB;P2=null}
  const om=new Map();if(P2)P2.pages.forEach(e=>{if(!om.has(e.no))om.set(e.no,e.k)});
- const pages=P1.pages.map(e=>{const p={no:e.no,b:e.b,h:e.h,k:e.k};if(e.un)p.un=1;if(om.has(e.no))p.o=om.get(e.no);return p});
+ const pages=P1.pages.map(e=>{const p={no:e.no,b:e.b,h:e.h,k:e.k};if(e.un)p.un=1;if(e.o)p.o=e.o;if(om.has(e.no))p.o=om.get(e.no);return p});
  if(P2){const have=new Set(pages.map(p=>p.no));let prev=null;P2.pages.forEach(e=>{if(have.has(e.no)){prev=e.no;return}
   const ix=prev?pages.findIndex(p=>p.no==prev):-1,src=pages[Math.max(ix,0)];pages.splice(ix+1,0,{no:e.no,b:src.b,h:src.h.map(x=>({...x})),k:e.k});have.add(e.no);prev=e.no})}
  pages.forEach(p=>{const bb=P1.babs[p.b];if(p.k.some(k=>k.k=="tbl")&&(p.un||(bb&&/^LAMPIRAN/i.test(bb.no||""))))p.k=p.k.filter(k=>k.k!="img")});
@@ -452,7 +485,7 @@ async function parsePaged(file,body,rels,z){
  for(const k of pend){k._t=rels[k.rid];delete k.rid;try{k.src=await rdz(k,1000,.78);imgs++}catch(e){}}
  for(const p of pages){const ims=[...p.k,...(p.o||[])].filter(k=>k.src);if(!ims.length)continue;for(const[w,q]of[[760,.6],[600,.5],[480,.42]]){if(JSON.stringify(p).length<=880000)break;for(const k of ims){try{k.src=await rdz(k,w,q)}catch(e){}}}}
  pages.forEach(p=>{[p.k,p.o||[]].forEach(a=>a.forEach(k=>{delete k._t}));p.k=p.k.filter(k=>k.k!="img"||k.src);if(p.o){p.o=p.o.filter(k=>k.k!="img"||k.src);if(!p.o.length)delete p.o}});
- return{src:file.name,title:P1.title||(P2&&P2.title)||"",ts:Date.now(),babs:P1.babs,pages,imgs,_st:{dups:A.k.dups+A.o.dups,orph:A.k.orph+A.o.orph}}}
+ return{src:file.name,title:ttl(P1)||(P2&&ttl(P2))||"",ts:Date.now(),babs:P1.babs,pages,imgs,_st:{dups:A.k.dups+A.o.dups,orph:A.k.orph+A.o.orph}}}
 /* ===== Impor materi: penyimpanan & tampilan baca ===== */
 let MT={},RP={},RK={};try{RP=JSON.parse(localStorage.getItem("essenpsak-pos")||"{}")}catch(e){}try{RK=JSON.parse(localStorage.getItem("essenpsak-pk")||"{}")}catch(e){}
 const SV=d=>`<svg viewBox="0 0 24 24">${d}</svg>`,savePos=()=>{try{localStorage.setItem("essenpsak-pos",JSON.stringify(RP));localStorage.setItem("essenpsak-pk",JSON.stringify(RK))}catch(e){}};
@@ -467,7 +500,7 @@ async function saveMT(pid,M){const loc=saveLocal();if(demo||!U)return{loc,cloud:
   await Promise.all(ch.map((c,i)=>setDoc(doc(db,"users",U.uid,"materi",pid+"__"+i),{pid,json:"["+c.join(",")+"]"})));
   return{loc,cloud:true}}catch(e){return{loc,cloud:false}}}
 const msg=(t,b)=>`<h2>${t}</h2><p class="m" style="margin:6px 0 14px">${b}</p><button class="btn" style="margin:0" onclick="close_()">Tutup</button>`;
-const mNk=t=>String(t||"").trim().replace(/\s+/g," ").toUpperCase(),mNs=s=>String(s||"").split(".").map(x=>parseInt(x)||0),mCmp=(a,b)=>{const x=mNs(a),y=mNs(b);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d}return 0},mBn=b=>(String(b.no||"").match(/\d+(?:\.\d+)*/)||[""])[0];
+const mNk=t=>String(t||"").trim().replace(/\s+/g," ").toUpperCase(),mNs=s=>String(s||"").split(".").map(x=>{const m=String(x).match(/^(\d+)([A-Za-z]*)$/);return m?(parseInt(m[1])||0)*1000+(m[2]?m[2].toUpperCase().charCodeAt(0)-64:0):parseInt(x)||0}),mCmp=(a,b)=>{const x=mNs(a),y=mNs(b);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d}return 0},mBn=b=>(String(b.no||"").match(/\d+(?:\.\d+)*/)||[""])[0];
 function mergeMT(O,N){const babs=[],bmap=new Map(),pg=new Map();let add=0,upd=0,u=0;
  const addB=b=>{const k=mNk(b.no)||("#"+mNk(b.t));let i=bmap.get(k);if(i==null){i=babs.length;babs.push({no:b.no,t:b.t,peta:b.peta||[]});bmap.set(k,i)}else{const o=babs[i];if(b.t)o.t=b.t;if(b.peta&&b.peta.length)o.peta=b.peta}return i};
  const take=(M,isNew)=>{const bm=M.babs.map(addB);
@@ -525,7 +558,10 @@ const lk=(t,id)=>{const M=MT[id];if(!M)return t;const ns=new Set(M.pages.map(p=>
  return t.replace(new RegExp("(paragraf(?:-paragraf)?\\s+)("+tk+"(?:(?:,\\s*dan\\s+|,\\s*|\\s+dan\\s+|\\s+atau\\s+)"+tk+")*)","gi"),(m,w,l)=>w+l.replace(new RegExp(tk,"g"),x=>{const r=x.split(/\s*[–-]\s*/);return ns.has(r[0])?`<button type="button" class="rf" onclick="rf('${id}','${r.join("~")}')">${x}</button>`:x}))};
 const tbl=k=>`<div class="tz"><div class="tzb"><button type="button" onclick="tzs(-1)" aria-label="Perkecil tabel">−</button><button type="button" onclick="tzs(1)" aria-label="Perbesar tabel">+</button></div><div class="tw"><table class="tt">${k.rows.map(r=>"<tr>"+r.map(c=>`<${c.h?"th":"td"}${c.cs>1?` colspan="${c.cs}"`:""}${c.rs>1?` rowspan="${c.rs}"`:""}>${c.t}</${c.h?"th":"td"}>`).join("")+"</tr>").join("")}</table></div></div>`,noPh=(p,id)=>{const M=MT[id],b=M&&M.babs?M.babs[p.b]:null;return p.k.some(k=>k.k=="tbl")&&!!(p.un||(b&&/^LAMPIRAN/i.test(b.no||"")))},blks=(p,id)=>{const np=noPh(p,id),hs_=p._o?"o":"k";return p.k.map((k,ki)=>k.k=="tbl"?tbl(k):k.k=="p"?`<p class="bp" data-bi="${ki}" data-hs="${hs_}">${lk(k.t,id)}</p>`:k.k=="img"?(np?"":/^data:image\//.test(k.src||"")?`<figure class="fg"><img src="${k.src}" alt="${E(k.alt)}"></figure>`:""):`<div class="li${k.k=="i"?" l2":""}"><span class="ln">${k.k=="b"?"•":E(k.n)}</span><div data-bi="${ki}" data-hs="${hs_}">${lk(k.t,id)}</div></div>`).join("")};
 /* Halaman tabel (lampiran): terjemahan Gen Z di atas, tabel asli di bawah dalam satu halaman */
-const stk=(p,id)=>!!(p.o&&p.o.some(k=>k.k=="tbl")&&noPh(p,id)),stkBl=(p,id)=>`<div class="ogt">Terjemahan Gen Z</div>`+blks(p,id)+`<div class="ogt" style="margin-top:28px">Teks asli</div>`+blks({k:p.o,b:p.b,un:p.un,_o:1},id);
+const stk=(p,id)=>!!(p.o&&p.o.some(k=>k.k=="tbl")&&noPh(p,id)),stkBl=(p,id)=>{const k=id+"|"+p.no,op=OGX.has(k);return`<div class="ogt">Terjemahan Gen Z</div>`+blks(p,id)+`<button type="button" class="ogt ogb${op?" on":""}" style="margin-top:28px" data-k="${E(k)}" onclick="ogTog(this)" aria-expanded="${op}">Teks asli ${SV('<path d="m9 6 6 6-6 6"/>')}</button><div class="ogx"${op?"":" hidden"}>`+blks({k:p.o,b:p.b,un:p.un,_o:1},id)+`</div>`};
+/* Teks asli di halaman tabel: tersembunyi, ketuk label "Teks asli" untuk tampilkan/sembunyikan */
+const OGX=new Set();
+window.ogTog=b=>{const x=b.nextElementSibling;if(!x)return;const o=x.hidden;x.hidden=!o;b.classList.toggle("on",o);b.setAttribute("aria-expanded",o);o?OGX.add(b.dataset.k):OGX.delete(b.dataset.k);if(o)hlApply()};
 {let p=75;try{const a=parseFloat(localStorage.getItem("essenpsak-fsp"));if(a)p=a;else{const o=parseFloat(localStorage.getItem("essenpsak-fs"));if(o)p=Math.round(o/16*100/5)*5}}catch(e){}
 p=Math.min(150,Math.max(50,p));
 const ap=()=>{document.documentElement.style.setProperty("--fs",(16*p/100)+"px");document.querySelectorAll(".fpc").forEach(e=>e.textContent=p+"%")};ap();
@@ -580,12 +616,12 @@ window.tocCur=()=>{if(cur)toc(cur)};
 window.impFrom=id=>{cur=id;imp()};
 /* Klik 1x = impor, klik 2x = riwayat impor */
 let tapT=0,tapM=null;
-window.impTap=id=>{const n=Date.now();if(tapM&&n-tapT<350){clearTimeout(tapM);tapM=null;tapT=0;hist();return}tapT=n;tapM=setTimeout(()=>{tapM=null;tapT=0;if(id)cur=id;imp()},300)};
+window.impTap=id=>{const n=Date.now();if(tapM&&n-tapT<350){clearTimeout(tapM);tapM=null;tapT=0;hist(id||cur);return}tapT=n;tapM=setTimeout(()=>{tapM=null;tapT=0;if(id)cur=id;imp()},300)};
 const bfF=M=>{if(!M||!M.pages||!M.pages.some(p=>!p.f))return;const ss=(M.srcs&&M.srcs.length?M.srcs:[M.src]).filter(Boolean);if(!ss.length)return;if(!M.srcs||!M.srcs.length)M.srcs=ss;const a=ss[0],z=ss[ss.length-1];M.pages.forEach(p=>{if(!p.f)p.f=p.un&&p.k.length&&p.k.every(k=>k.k=="img")?z:a})},
 fileList=M=>(M.srcs&&M.srcs.length?M.srcs:[M.src]).filter(Boolean).map((n,i)=>({n,i,c:M.pages.filter(p=>p.f==n).length,t:M.hts&&M.hts[n]}));
-window.hist=()=>{const ids=Object.keys(MT).filter(k=>MT[k]&&MT[k].pages).sort((a,b)=>(MT[b].ts||0)-(MT[a].ts||0));
+window.hist=id=>{const ids=MT[id]&&MT[id].pages?[id]:[],y=P.find(p=>p[0]==id);
  let h=`<h2>Riwayat impor</h2>`;
- if(!ids.length)h+=`<p class="m" style="margin:8px 0 14px">Belum ada materi yang diimpor.</p>`;
+ if(!ids.length)h+=`<p class="m" style="margin:8px 0 14px">Belum ada impor untuk ${y?E(y[1]+(y[2]?" · "+y[2]:"")):"materi ini"}.</p>`;
  else h+=ids.map(id=>{const M=MT[id];bfF(M);const x=P.find(p=>p[0]==id);
   return`<div style="margin-top:12px"><b>${x?E(x[1]):E(id)}</b>${x&&x[2]?` <span class="m">· ${E(x[2])}</span>`:""}</div>`+fileList(M).map(f=>{const d=f.t?" · "+new Date(f.t).toLocaleString("id-ID",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}):"";
    return`<div class="it"><div style="min-width:0"><b style="word-break:break-word">${E(f.n)}</b><div class="m">${f.c} halaman${d}</div></div><button class="ib" style="color:#D93636" onclick="delFile('${id}',${f.i})" aria-label="Hapus impor ${E(f.n)}">${SV('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>')}</button></div>`}).join("")}).join("");
@@ -594,7 +630,7 @@ const afterDel=()=>{if($("#v .dv"))det(cur,1);else if(pg=="m")$("#v").innerHTML=
 window.delHist=async(id,sk)=>{if(!sk&&!confirm("Hapus materi hasil impor ini? Seluruh halaman yang diimpor akan ikut terhapus."))return;
  delete MT[id];delete RP[id];delete RK[id];savePos();saveLocal();
  if(!demo&&U)try{const old=await getDocs(path("materi"));await Promise.all(old.docs.filter(d=>d.id.startsWith(id+"__")).map(d=>deleteDoc(d.ref)))}catch(e){}
- hist();afterDel()};
+ hist(id);afterDel()};
 window.delFile=async(id,i)=>{const M=MT[id];if(!M)return;bfF(M);const fl=fileList(M),f=fl[i];if(!f)return;
  if(!confirm(`Hapus impor "${f.n}"? ${f.c} halaman dari file ini akan dihapus.`))return;
  const keep=M.pages.filter(p=>p.f!=f.n);
@@ -602,7 +638,7 @@ window.delFile=async(id,i)=>{const M=MT[id];if(!M)return;bfF(M);const fl=fileLis
  const ub=[...new Set(keep.map(p=>p.b))].sort((a,b)=>a-b),mp=new Map(ub.map((o,n)=>[o,n])),srcs=fl.filter(x=>x.i!=i).map(x=>x.n);
  M.babs=ub.map(o=>M.babs[o]);keep.forEach(p=>{p.b=mp.get(p.b)});M.pages=keep;M.srcs=srcs;M.src=srcs[srcs.length-1]||M.src;
  if(M.hts)delete M.hts[f.n];M.imgs=keep.reduce((a,p)=>a+p.k.filter(k=>k.k=="img").length,0);M.ts=Date.now();
- RP[id]=0;RK[id]="j";savePos();await saveMT(id,M);hist();afterDel()};
+ RP[id]=0;RK[id]="j";savePos();await saveMT(id,M);hist(id);afterDel()};
 window.fsFrom=id=>{cur=id;if(MT[id])fsOpen();else sheet(`<h2>Materi belum diisi</h2><p class="m" style="margin:6px 0 14px">Impor file Word (.docx) hasil materi (halaman asli + terjemahan Gen Z). Layar penuh tampil per judul, bab, sub bab, dan materi (1.1, 1.2, …).</p><button class="btn" style="margin:0" onclick="close_();imp()">Impor materi</button><button class="btn o" onclick="close_()">Tutup</button>`)};
 window.fsOpen=()=>{if(!cur||!MT[cur])return;history.pushState({d:1},"");fsEl().classList.add("on");$("#fsv").classList.remove("nobar");fsOn=true;document.body.style.overflow="hidden";fsRender();};
 function fsHide(){fsOn=false;const e=$("#fsv");if(e)e.classList.remove("on");document.body.style.overflow="";}
